@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu App de Mercado - Scanner</title>
+    
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 { color: #333; font-size: 24px; text-align: center; margin-bottom: 10px;}
+
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background: white;
+            margin-bottom: 20px;
+        }
+
+        #resultado-area {
+            padding: 15px;
+            background: #39ff14; 
+            color: black;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            display: none; 
+            text-align: center;
+            width: 100%;
+            max-width: 370px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,255,0,0.2);
+        }
+
+        .box-padrao {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        .box-padrao input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .btn-acao {
+            width: 100%;
+            padding: 15px;
+            background: #2a5298;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-acao:hover { background: #1e3c72; }
+
+        @keyframes piscarAlerta {
+            0% { box-shadow: 0 4px 10px rgba(0,0,0,0.1); background-color: white; border: 2px solid transparent; }
+            50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); background-color: #fff0f0; border: 2px solid #ff4d4d; }
+            100% { box-shadow: 0 4px 10px rgba(0,0,0,0.1); background-color: white; border: 2px solid transparent; }
+        }
+
+        .alerta-estourou {
+            animation: piscarAlerta 1.5s infinite !important;
+            transition: 0.5s;
+        }
+
+        /* --- ESTILOS DO NOVO HISTÓRICO --- */
+        .modal {
+            display: none; /* Fica escondido até o usuário clicar no botão */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #777;
+            font-weight: bold;
+        }
+
+        .compra-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: left;
+            background: #fdfdfd;
+        }
+
+        .compra-data {
+            font-weight: bold;
+            color: #2a5298;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🛒 Scanner do Mercado</h1>
+
+    <button class="btn-acao" onclick="abrirHistorico()" style="background: #607d8b; max-width: 400px; margin-bottom: 20px;">📜 Ver Histórico de Compras</button>
+
+    <div class="box-padrao" style="padding: 15px;">
+        <label for="limite-orcamento" style="font-weight: bold; color: #555; font-size: 16px;">Qual o limite de gastos hoje?</label>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 10px;">
+            <strong style="font-size: 20px; color: #333;">R$</strong>
+            <input type="number" id="limite-orcamento" value="150.00" step="10" onchange="atualizarTelaDoCarrinho()" style="width: 120px; margin: 0; font-weight: bold; color: #d9534f;">
+        </div>
+    </div>
+    
+    <div class="box-padrao" style="padding: 15px;">
+        <label for="quantidade-item" style="font-weight: bold; color: #555; font-size: 16px;">Quantidade do próximo item:</label>
+        <div style="display: flex; justify-content: center; align-items: center; margin-top: 10px; gap: 15px;">
+            <button onclick="mudarQuantidade(-1)" style="padding: 10px 20px; font-size: 20px; font-weight: bold; background: #e0e0e0; color: #333; border: none; border-radius: 5px; cursor: pointer;">-</button>
+            <input type="number" id="quantidade-item" value="1" min="1" style="width: 60px; margin: 0; font-weight: bold;">
+            <button onclick="mudarQuantidade(1)" style="padding: 10px 20px; font-size: 20px; font-weight: bold; background: #2a5298; color: white; border: none; border-radius: 5px; cursor: pointer;">+</button>
+        </div>
+    </div>
+
+    <div id="reader"></div>
+
+    <div id="resultado-area">
+        Código Lido: <span id="codigo-lido"></span>
+    </div>
+
+    <div class="box-padrao">
+        <p style="margin-top: 0; color: #555; font-weight: bold;">Câmera não leu? Digite o código:</p>
+        <input type="number" id="codigo-manual" placeholder="Ex: 7891234567890">
+        <button class="btn-acao" onclick="buscarManual()">Adicionar Item</button>
+    </div>
+
+    <div id="carrinho" class="box-padrao" style="border: 2px solid transparent;">
+        <h2 style="margin-top: 0; color: #333;">Meu Carrinho</h2>
+        <ul id="itens-carrinho" style="list-style: none; padding: 0; margin-bottom: 20px;"></ul>
+        <h2 style="text-align: right; color: #333; margin: 0; margin-bottom: 20px;" id="texto-total">Total: R$ <span id="valor-total">0,00</span></h2>
+        
+        <button class="btn-acao" onclick="finalizarCompra()" style="background: #4CAF50;">✅ Finalizar Compra</button>
+    </div>
+
+    <div id="modal-historico" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharHistorico()">&times;</span>
+            <h2 style="margin-top: 0; color: #333; text-align: center;">Histórico de Compras</h2>
+            <div id="lista-historico">
+                </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
+</body>
+</html>
