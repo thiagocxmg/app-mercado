@@ -250,7 +250,16 @@
 
         carregarDados();
         
-        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 150} }, false);
+        // Configuração do Scanner forçando a câmera traseira (environment)
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { 
+                fps: 10, 
+                qrbox: {width: 250, height: 150},
+                videoConstraints: { facingMode: "environment" } // O SEGREDO ESTÁ AQUI
+            }, 
+            false
+        );
         html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 
         // --- TENTATIVA DE TRADUCAO DO SCANNER ---
