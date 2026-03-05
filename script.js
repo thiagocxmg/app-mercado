@@ -307,3 +307,42 @@ setInterval(() => {
         linkArquivo.innerText = 'Escanear usando a câmera';
     }
 }, 1000);
+
+// ==========================================
+// MÁGICA DE INSTALAÇÃO DO APLICATIVO (PWA)
+// ==========================================
+let eventoInstalacao;
+const btnInstalar = document.getElementById('btn-instalar');
+
+// O navegador avisa: "Ei, estou pronto para instalar!"
+window.addEventListener('beforeinstallprompt', (e) => {
+    // 1. Impede o Chrome de mostrar a barrinha padrão chata
+    e.preventDefault();
+    // 2. Guarda o evento mágico para usarmos depois
+    eventoInstalacao = e;
+    // 3. Mostra o nosso botão roxo bonitão!
+    if (btnInstalar) {
+        btnInstalar.style.display = 'block';
+    }
+});
+
+// Quando o usuário clicar no nosso botão roxo:
+if (btnInstalar) {
+    btnInstalar.addEventListener('click', async () => {
+        if (!eventoInstalacao) return;
+        
+        // Dispara o alerta de instalação nativo do celular (Aquele que diz "Adicionar à tela inicial?")
+        eventoInstalacao.prompt();
+        
+        // Espera o usuário clicar em "Instalar" ou "Cancelar"
+        const { outcome } = await eventoInstalacao.userChoice;
+        
+        if (outcome === 'accepted') {
+            // Se ele instalou, a gente esconde o botão para não atrapalhar mais a tela
+            btnInstalar.style.display = 'none';
+        }
+        
+        // Limpa a memória
+        eventoInstalacao = null; 
+    });
+}
